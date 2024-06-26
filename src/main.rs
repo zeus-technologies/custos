@@ -5,6 +5,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod config;
 mod coordinator;
 mod db;
+mod reporter;
 mod strategies;
 
 #[derive(Parser, Debug)]
@@ -42,6 +43,12 @@ async fn main() {
     let mut conn = pool.get().expect("get connection");
     db::file_repository::run_migrations(&mut conn).expect("ran migrations");
 
+    // create the reporter
+    let (reporter, channel) = reporter::Reporter::new();
+    tokio::spawn(async move {
+        reporter.process_results();
+    });
+
     // scan the directories
     for directory in &config.scan_directories {
         debug!("scanning directory: {}", directory);
@@ -63,8 +70,9 @@ async fn main() {
 
         let update = args.mode == RunMode::Update;
         for chunk in chunks {
+            let c = channel.clone();
             workers.push(tokio::spawn(async move {
-                let scanner = coordinator::ScanCoordinator::new(update, &chunk);
+                let scanner = coordinator::ScanCoordinator::new(update, &chunk, c);
                 scanner.run();
             }));
         }

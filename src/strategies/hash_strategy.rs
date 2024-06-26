@@ -1,7 +1,7 @@
 use sha2::{Digest, Sha256};
 use tracing::{debug, error, trace};
 
-use crate::{db, strategies::ScanStrategyResult};
+use crate::{db, strategies::FileStatus};
 
 use super::ScanStrategy;
 
@@ -21,7 +21,7 @@ impl SHA256FileScanStrategy {
 }
 
 impl ScanStrategy for SHA256FileScanStrategy {
-    fn process(&self, path: &std::path::Path, data: &[u8]) -> ScanStrategyResult {
+    fn process(&self, path: &std::path::Path, data: &[u8]) -> FileStatus {
         let hash = self.calculate_hash(&data);
         let mut pool = db::database::get_connection_pool();
         if let Some(file_history) = db::file_repository::get_file(&mut pool, path.to_str().unwrap())
@@ -29,14 +29,14 @@ impl ScanStrategy for SHA256FileScanStrategy {
             trace!("file already exists, comparing hashes!");
             if hash.as_slice() == hex::decode(file_history.hash).unwrap() {
                 trace!("file hashes matches, file is unchanged.");
-                return ScanStrategyResult::OK;
+                return FileStatus::OK(file_history.filepath);
             } else {
                 error!("file change detected");
-                return ScanStrategyResult::UpdatedFile(file_history.filepath);
+                return FileStatus::FileChanged(file_history.filepath);
             }
         } else {
             debug!("file does not exist, inserting!");
-            return ScanStrategyResult::NewFile(path.to_str().unwrap().to_string());
+            return FileStatus::NewFile(path.to_str().unwrap().to_string());
         }
     }
 
