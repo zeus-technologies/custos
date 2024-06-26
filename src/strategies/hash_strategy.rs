@@ -3,9 +3,7 @@ use tracing::{debug, error, trace};
 
 use crate::db;
 
-pub trait ScanStrategy {
-    fn process(&self, path: &std::path::Path, data: &[u8]);
-}
+use super::ScanStrategy;
 
 #[derive(Debug)]
 pub struct SHA256FileScanStrategy;

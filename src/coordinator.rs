@@ -3,6 +3,8 @@ use std::sync::atomic::AtomicU16;
 use tokio::time::Instant;
 use tracing::{debug, warn};
 
+use crate::strategies;
+
 static COORDINATOR_ID: AtomicU16 = AtomicU16::new(0);
 
 pub struct ScanCoordinator<'a> {
@@ -16,7 +18,7 @@ impl<'a> ScanCoordinator<'a> {
         ScanCoordinator {
             id: COORDINATOR_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             paths,
-            strategies: vec![Box::new(crate::strategies::SHA256FileScanStrategy::new())],
+            strategies: vec![Box::new(strategies::SHA256FileScanStrategy::new())],
         }
     }
 
