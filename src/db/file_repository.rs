@@ -28,10 +28,13 @@ pub fn get_file(pool: &mut Pool<ConnectionManager<SqliteConnection>>, path: &str
         .expect("query for file")
 }
 
-pub fn insert_file(pool: &mut Pool<ConnectionManager<SqliteConnection>>, file: File) {
+pub fn insert_file(pool: &mut Pool<ConnectionManager<SqliteConnection>>, f: File) {
     use schema::files::dsl::*;
     diesel::insert_into(files)
-        .values(&file)
+        .values(&f)
+        .on_conflict(filepath)
+        .do_update()
+        .set(hash.eq(&f.hash))
         .execute(&mut pool.get().unwrap())
         .expect("save new file");
 }

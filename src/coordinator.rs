@@ -11,14 +11,16 @@ pub struct ScanCoordinator<'a> {
     id: u16,
     pub paths: &'a [String],
     pub strategies: Vec<Box<dyn crate::strategies::ScanStrategy>>,
+    pub update: bool,
 }
 
 impl<'a> ScanCoordinator<'a> {
-    pub fn new(paths: &'a [String]) -> ScanCoordinator {
+    pub fn new(update: bool, paths: &'a [String]) -> ScanCoordinator {
         ScanCoordinator {
             id: COORDINATOR_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             paths,
             strategies: vec![Box::new(strategies::SHA256FileScanStrategy::new())],
+            update,
         }
     }
 
@@ -47,10 +49,14 @@ impl<'a> ScanCoordinator<'a> {
         match std::fs::read(path) {
             Ok(data) => {
                 for strategy in &self.strategies {
-                    strategy.process(path, &data);
+                    if self.update {
+                        strategy.update(path, &data);
+                    } else {
+                        strategy.process(path, &data);
+                    }
                 }
             }
-            Err(e) => warn!("failed to read file: {:?}", e),
+            Err(e) => warn!("failed to read file {:?}: {:?}", path, e),
         }
     }
 }

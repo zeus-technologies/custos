@@ -1,7 +1,7 @@
 use sha2::{Digest, Sha256};
 use tracing::{debug, error, trace};
 
-use crate::db;
+use crate::{db, strategies::ScanStrategyResult};
 
 use super::ScanStrategy;
 
@@ -21,7 +21,7 @@ impl SHA256FileScanStrategy {
 }
 
 impl ScanStrategy for SHA256FileScanStrategy {
-    fn process(&self, path: &std::path::Path, data: &[u8]) {
+    fn process(&self, path: &std::path::Path, data: &[u8]) -> ScanStrategyResult {
         let hash = self.calculate_hash(&data);
         let mut pool = db::database::get_connection_pool();
         if let Some(file_history) = db::file_repository::get_file(&mut pool, path.to_str().unwrap())
@@ -29,20 +29,30 @@ impl ScanStrategy for SHA256FileScanStrategy {
             trace!("file already exists, comparing hashes!");
             if hash.as_slice() == hex::decode(file_history.hash).unwrap() {
                 trace!("file hashes matches, file is unchanged.");
-                return;
+                return ScanStrategyResult::OK;
             } else {
-                error!("file hashes do not match, raising an error!");
+                error!("file change detected");
+                return ScanStrategyResult::UpdatedFile(file_history.filepath);
             }
-            debug!("{:?}: {:?}", path, hash);
         } else {
             debug!("file does not exist, inserting!");
-            db::file_repository::insert_file(
-                &mut pool,
-                db::file_repository::File {
-                    filepath: path.to_str().unwrap().to_string(),
-                    hash: hex::encode(hash),
-                },
-            );
+            return ScanStrategyResult::NewFile(path.to_str().unwrap().to_string());
         }
+    }
+
+    fn update(&self, path: &std::path::Path, data: &[u8]) {
+        let hash = self.calculate_hash(&data);
+        let mut pool = db::database::get_connection_pool();
+        db::file_repository::insert_file(
+            &mut pool,
+            db::file_repository::File {
+                filepath: path.to_str().unwrap().to_string(),
+                hash: hex::encode(hash),
+            },
+        );
+    }
+
+    fn get_name(&self) -> &str {
+        "SHA256FileScanStrategy"
     }
 }
