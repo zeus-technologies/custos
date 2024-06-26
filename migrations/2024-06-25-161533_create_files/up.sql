@@ -1,0 +1,4 @@
+CREATE TABLE files (
+  filepath VARCHAR PRIMARY KEY NOT NULL,
+  hash VARCHAR NOT NULL
+)
