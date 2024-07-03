@@ -31,7 +31,7 @@ impl ScanStrategy for SHA256FileScanStrategy {
                 trace!("file hashes matches, file is unchanged.");
                 return FileStatus::OK(file_history.filepath);
             } else {
-                error!("file change detected");
+                debug!("file change detected");
                 return FileStatus::FileChanged(file_history.filepath);
             }
         } else {

@@ -1,11 +1,12 @@
 use clap::{Parser, ValueEnum};
+use reports::terminal_reporter::TerminalReporter;
 use tracing::{debug, error};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod config;
 mod coordinator;
 mod db;
-mod reporter;
+mod reports;
 mod strategies;
 
 #[derive(Parser, Debug)]
@@ -14,6 +15,8 @@ struct Cli {
     /// The mode to run aegis in, either scan or update
     #[arg(value_enum)]
     mode: RunMode,
+    #[arg(short, long, default_value_t = false)]
+    quiet: bool,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, ValueEnum)]
@@ -26,7 +29,7 @@ fn init_tracing() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("debug")),
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("error")),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -44,8 +47,10 @@ async fn main() {
     db::file_repository::run_migrations(&mut conn).expect("ran migrations");
 
     // create the reporter
-    let (reporter, channel) = reporter::Reporter::new();
+    let (sender, receiver) = crossbeam::channel::unbounded();
     tokio::spawn(async move {
+        let mut reporter = reports::ReportManager::new(receiver);
+        reporter.add_reporter(Box::new(TerminalReporter::new(args.quiet)));
         reporter.process_results();
     });
 
@@ -70,9 +75,9 @@ async fn main() {
 
         let update = args.mode == RunMode::Update;
         for chunk in chunks {
-            let c = channel.clone();
+            let s = sender.clone();
             workers.push(tokio::spawn(async move {
-                let scanner = coordinator::ScanCoordinator::new(update, &chunk, c);
+                let scanner = coordinator::ScanCoordinator::new(update, &chunk, s);
                 scanner.run();
             }));
         }
