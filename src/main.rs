@@ -10,9 +10,9 @@ mod reports;
 mod strategies;
 
 #[derive(Parser, Debug)]
-#[command(version, name = "aegis")]
+#[command(version, name = "custos")]
 struct Cli {
-    /// The mode to run aegis in, either scan or update
+    /// The mode to run custos in, either scan or update
     #[arg(value_enum)]
     mode: RunMode,
     #[arg(short, long, default_value_t = false)]

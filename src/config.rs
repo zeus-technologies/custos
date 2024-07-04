@@ -12,7 +12,7 @@ pub struct Config {
 }
 
 fn init_config() -> Config {
-    let contents = match std::fs::read_to_string("aegis.toml") {
+    let contents = match std::fs::read_to_string("custos.toml") {
         Ok(contents) => contents,
         Err(_) => {
             panic!("failed to load configuration file")

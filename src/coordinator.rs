@@ -11,7 +11,8 @@ pub struct ScanCoordinator<'a> {
     id: u16,
     channel: crossbeam::channel::Sender<ScanStrategyResult>,
     pub paths: &'a [String],
-    pub strategies: Vec<Box<dyn crate::strategies::ScanStrategy>>,
+    pub scan_strategies: Vec<Box<dyn crate::strategies::ScanStrategy>>,
+    pub process_strategies: Vec<Box<dyn crate::strategies::ProcessStrategy>>,
     pub update: bool,
 }
 
@@ -25,7 +26,8 @@ impl<'a> ScanCoordinator<'a> {
             id: COORDINATOR_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             channel,
             paths,
-            strategies: vec![Box::new(strategies::SHA256FileScanStrategy::new())],
+            scan_strategies: vec![Box::new(strategies::SHA256FileScanStrategy::new())],
+            process_strategies: Vec::new(),
             update,
         }
     }
@@ -54,7 +56,7 @@ impl<'a> ScanCoordinator<'a> {
         }
         match std::fs::read(path) {
             Ok(data) => {
-                for strategy in &self.strategies {
+                for strategy in &self.scan_strategies {
                     if self.update {
                         strategy.update(path, &data);
                     } else {
