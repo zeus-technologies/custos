@@ -1,12 +1,21 @@
+use tracing::warn;
+
 use super::ProcessStrategy;
 
 pub struct YaraFileScanStrategy {
-    rule_directory: String,
+   rules: Option<yara::Rules>
 }
 
 impl YaraFileScanStrategy {
     pub fn new(rule_directory: String) -> YaraFileScanStrategy {
-        YaraFileScanStrategy { rule_directory }
+        let mut compiler = yara::Compiler::new().unwrap();
+        let paths = std::fs::read_dir(rule_directory).unwrap();
+        for path in paths {
+            compiler = compiler.add_rules_file(path.unwrap().path()).expect("add yara rule file");
+        }
+        YaraFileScanStrategy { 
+            rules: Some(compiler.compile_rules().expect("yara rule compilation")),
+        }
     }
 }
 

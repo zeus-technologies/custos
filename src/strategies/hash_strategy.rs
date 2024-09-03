@@ -1,5 +1,5 @@
 use sha2::{Digest, Sha256};
-use tracing::{debug, error, trace};
+use tracing::{debug, trace};
 
 use crate::{db, strategies::FileStatus};
 

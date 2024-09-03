@@ -1,9 +1,9 @@
 use std::sync::atomic::AtomicU16;
 
 use tokio::time::Instant;
-use tracing::{debug, warn};
+use tracing::debug;
 
-use crate::strategies::{self, FileStatus, ScanStrategyResult};
+use crate::strategies::{FileStatus, ScanStrategyResult};
 
 static COORDINATOR_ID: AtomicU16 = AtomicU16::new(0);
 
@@ -26,10 +26,18 @@ impl<'a> ScanCoordinator<'a> {
             id: COORDINATOR_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             channel,
             paths,
-            scan_strategies: vec![Box::new(strategies::SHA256FileScanStrategy::new())],
+            scan_strategies: Vec::new(),
             process_strategies: Vec::new(),
             update,
         }
+    }
+
+    pub fn add_scan_strategy(&mut self, strategy: Box<dyn crate::strategies::ScanStrategy>) {
+        self.scan_strategies.push(strategy);
+    }
+
+    pub fn add_process_strategy(&mut self, strategy: Box<dyn crate::strategies::ProcessStrategy>) {
+        self.process_strategies.push(strategy);
     }
 
     pub fn run(&self) {

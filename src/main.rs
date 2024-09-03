@@ -77,7 +77,8 @@ async fn main() {
         for chunk in chunks {
             let s = sender.clone();
             workers.push(tokio::spawn(async move {
-                let scanner = coordinator::ScanCoordinator::new(update, &chunk, s);
+                let mut scanner = coordinator::ScanCoordinator::new(update, &chunk, s);
+                scanner.add_scan_strategy(Box::new(strategies::SHA256FileScanStrategy::new()));
                 scanner.run();
             }));
         }
