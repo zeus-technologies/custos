@@ -6,5 +6,5 @@ mod report_manager;
 pub mod terminal_reporter;
 
 pub(crate) trait Reporter {
-    fn report(&self, result: &strategies::ScanStrategyResult);
+    fn report(&self, result: &strategies::StrategyResult);
 }

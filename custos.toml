@@ -1,3 +1,4 @@
 thread_count = 4
 database_location = "./db/custos.sqlite"
+yara_rule_directory = "./rules"
 scan_directories = ["/etc/**/*"]
