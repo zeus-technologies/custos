@@ -9,9 +9,10 @@ Custos is a Rust-based Intrusion Detection System (IDS). This applications scans
 - YARA Rule Integration
 
 ## Installation
-### Rerequisites
+### Prerequisites
 - Rust
 - Diesel CLI
+- YARA
 
 ### Steps
 1. Clone the repository
