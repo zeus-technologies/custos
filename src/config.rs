@@ -9,6 +9,7 @@ pub struct Config {
     pub thread_count: usize,
     pub database_location: String,
     pub scan_directories: Vec<String>,
+    pub yara_rule_directory: String,
 }
 
 fn init_config() -> Config {

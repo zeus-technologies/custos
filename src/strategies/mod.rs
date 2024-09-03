@@ -13,7 +13,12 @@ pub trait ScanStrategy {
 }
 
 pub trait ProcessStrategy {
-    fn process(&self, status: FileStatus, path: &std::path::Path, data: &[u8]) -> FileStatus;
+    fn process(
+        &self,
+        status: &FileStatus,
+        path: &std::path::Path,
+        data: &[u8],
+    ) -> Option<FileStatus>;
     fn get_name(&self) -> &str;
 }
 
@@ -27,7 +32,7 @@ pub enum FileStatus {
 }
 
 #[derive(Debug)]
-pub struct ScanStrategyResult {
+pub struct StrategyResult {
     pub strategy: String,
     pub result: FileStatus,
 }

@@ -79,6 +79,9 @@ async fn main() {
             workers.push(tokio::spawn(async move {
                 let mut scanner = coordinator::ScanCoordinator::new(update, &chunk, s);
                 scanner.add_scan_strategy(Box::new(strategies::SHA256FileScanStrategy::new()));
+                scanner.add_process_strategy(Box::new(strategies::YaraFileScanStrategy::new(
+                    config.yara_rule_directory.clone(),
+                )));
                 scanner.run();
             }));
         }

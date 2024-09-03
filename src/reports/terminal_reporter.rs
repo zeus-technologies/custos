@@ -13,7 +13,7 @@ impl TerminalReporter {
 }
 
 impl super::Reporter for TerminalReporter {
-    fn report(&self, result: &crate::strategies::ScanStrategyResult) {
+    fn report(&self, result: &crate::strategies::StrategyResult) {
         match &result.result {
             FileStatus::OK(path) => trace!("file passed: {:?}", path),
             FileStatus::NewFile(path) => {

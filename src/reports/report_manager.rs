@@ -5,14 +5,12 @@ use crate::strategies;
 use super::Reporter;
 
 pub struct ReportManager {
-    channel: crossbeam::channel::Receiver<strategies::ScanStrategyResult>,
+    channel: crossbeam::channel::Receiver<strategies::StrategyResult>,
     reporters: Vec<Box<dyn Reporter>>,
 }
 
 impl ReportManager {
-    pub fn new(
-        channel: crossbeam::channel::Receiver<strategies::ScanStrategyResult>,
-    ) -> ReportManager {
+    pub fn new(channel: crossbeam::channel::Receiver<strategies::StrategyResult>) -> ReportManager {
         ReportManager {
             channel,
             reporters: Vec::new(),

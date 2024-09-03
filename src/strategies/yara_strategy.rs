@@ -1,9 +1,7 @@
-use tracing::warn;
-
-use super::ProcessStrategy;
+use super::{FileStatus, ProcessStrategy};
 
 pub struct YaraFileScanStrategy {
-   rules: Option<yara::Rules>
+    rules: yara::Rules,
 }
 
 impl YaraFileScanStrategy {
@@ -11,10 +9,12 @@ impl YaraFileScanStrategy {
         let mut compiler = yara::Compiler::new().unwrap();
         let paths = std::fs::read_dir(rule_directory).unwrap();
         for path in paths {
-            compiler = compiler.add_rules_file(path.unwrap().path()).expect("add yara rule file");
+            compiler = compiler
+                .add_rules_file(path.unwrap().path())
+                .expect("add yara rule file");
         }
-        YaraFileScanStrategy { 
-            rules: Some(compiler.compile_rules().expect("yara rule compilation")),
+        YaraFileScanStrategy {
+            rules: compiler.compile_rules().expect("yara rule compilation"),
         }
     }
 }
@@ -22,11 +22,22 @@ impl YaraFileScanStrategy {
 impl ProcessStrategy for YaraFileScanStrategy {
     fn process(
         &self,
-        status: super::FileStatus,
+        status: &super::FileStatus,
         path: &std::path::Path,
         data: &[u8],
-    ) -> super::FileStatus {
-        status
+    ) -> Option<super::FileStatus> {
+        if let FileStatus::ReadFailed(_, _) = status {
+            return None;
+        }
+
+        let matches = self.rules.scan_mem(data, 30).expect("yara scan");
+        if matches.len() > 0 {
+            Some(FileStatus::MaliciousFile(
+                path.to_str().unwrap().to_string(),
+            ))
+        } else {
+            None
+        }
     }
 
     fn get_name(&self) -> &str {
